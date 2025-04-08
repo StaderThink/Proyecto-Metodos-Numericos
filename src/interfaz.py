@@ -3,10 +3,10 @@ from tkinter import ttk
 from tkinter import messagebox
 import numpy as np
 import pandas as pd
-from modelo_gaussiano import calcular_concentracion, calcular_sigma
-from visualizacion import crear_grafico_2d, crear_grafico_3d
-from preprocesamiento import cargar_datos, limpiar_datos, preparar_datos_ml
-from entrenamiento_ml import entrenar_modelo
+from src.modelo_gaussiano import calcular_concentracion, calcular_sigma
+from src.visualizacion import crear_grafico_2d, crear_grafico_3d, crear_grafico_dispersion, crear_mapa_calor  # Importa la nueva función de visualización
+from src.preprocesamiento import cargar_datos, limpiar_datos, preparar_datos_ml
+from src.entrenamiento_ml import entrenar_modelo
 
 class InterfazGrafica:
     def __init__(self, master):
@@ -46,31 +46,51 @@ class InterfazGrafica:
             X, y = preparar_datos_ml(df)
             self.modelo_ml = entrenar_modelo(X, y)  # Guarda el modelo entrenado
 
-            # 3. Simulación de la dispersión gaussiana (ejemplo)
+            # 3. Simulación de la dispersión gaussiana (para el gráfico 2D y 3D)
             H = float(self.h_entry.get())
             estabilidad = self.estabilidad_combo.get()
 
-            # Define un rango espacial (esto debería ser adaptado a tus datos y área de interés)
-            x = np.linspace(100, 1000, 50)  # Distancia a lo largo del viento
+            # Define un rango espacial (para el gráfico 2D y 3D)
+            x_rango = np.linspace(100, 1000, 50)  # Distancia a lo largo del viento
             y_rango = np.linspace(-200, 200, 50)  # Distancia perpendicular al viento
             z = 0  # Altura al nivel del suelo
 
             # Usa datos promedio para la simulación (esto es solo un ejemplo)
-            Q = df['Emisiones_Vehiculares'].mean() + df['Emisiones_Industriales'].mean() # Tasa de emisión (suma de fuentes)
+            Q = df['Emisiones_Vehiculares'].mean() + df['Emisiones_Industriales'].mean()  # Tasa de emisión (suma de fuentes)
             u = df['Velocidad_Viento'].mean()  # Velocidad del viento
 
             # Calcula sigma_y y sigma_z
-            sigma_y, sigma_z = calcular_sigma(x, estabilidad)
+            sigma_y, sigma_z = calcular_sigma(x_rango, estabilidad)
 
-            # Calcula la concentración para cada punto
-            concentraciones = np.zeros((len(y_rango), len(x)))
+            # Calcula la concentración para cada punto (para el gráfico 2D y 3D)
+            concentraciones_2d = np.zeros((len(y_rango), len(x_rango)))
             for i, yi in enumerate(y_rango):
-                for j, xi in enumerate(x):
-                    concentraciones[i, j] = calcular_concentracion(Q, u, H, sigma_y[j], sigma_z[j], xi, yi, z)
+                for j, xi in enumerate(x_rango):
+                    concentraciones_2d[i, j] = calcular_concentracion(Q, u, H, sigma_y[j], sigma_z[j], xi, yi, z)
 
-            # 4. Visualizar los resultados
-            crear_grafico_2d(x, y_rango, concentraciones, titulo="Concentración de Contaminantes (2D)")
-            crear_grafico_3d(x, y_rango, concentraciones, titulo="Concentración de Contaminantes (3D)")
+            # 4. Simulación de la dispersión gaussiana (para el gráfico de dispersión y mapa de calor)
+            concentraciones_dispersion = []
+            for index, row in df.iterrows():
+                # Obtiene los datos de la fila
+                Q = row['Emisiones_Vehiculares'] + row['Emisiones_Industriales']  # Tasa de emisión (suma de fuentes)
+                u = row['Velocidad_Viento']  # Velocidad del viento
+                x = 100  # Distancia a lo largo del viento (puedes ajustarla)
+                y_val = 0  # Distancia perpendicular al viento (puedes ajustarla)
+                z = 0  # Altura al nivel del suelo
+
+                # Calcula sigma_y y sigma_z
+                sigma_y_disp, sigma_z_disp = calcular_sigma(x, estabilidad)
+
+                # Calcula la concentración
+                C = calcular_concentracion(Q, u, H, sigma_y_disp[0], sigma_z_disp[0], x, y_val, z)  # Usamos sigma_y[0] y sigma_z[0] porque x es un valor único
+                concentraciones_dispersion.append(C)
+
+            # 5. Visualizar los resultados
+            crear_grafico_2d(x_rango, y_rango, concentraciones_2d, titulo="Concentración de Contaminantes (2D)")
+            crear_grafico_3d(x_rango, y_rango, concentraciones_2d, titulo="Concentración de Contaminantes (3D)")
+            crear_grafico_dispersion(df, concentraciones_dispersion, titulo="Dispersión de Contaminantes")
+            crear_mapa_calor(df, concentraciones_dispersion, titulo="Mapa de Calor de Concentración de Contaminantes")
+
 
             messagebox.showinfo("Info", "Cálculo y visualización completados.")
 
