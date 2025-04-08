@@ -58,7 +58,7 @@ def crear_grafico_dispersion(df, concentraciones, titulo="Dispersión de Contami
     plt.title(titulo)
     plt.grid(True)
     plt.show()
-def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentración de Contaminantes"):
+# def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentración de Contaminantes"):
     """
     Crea un mapa de calor de la concentración de contaminantes en función de la ubicación.
 
@@ -69,7 +69,7 @@ def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentració
     """
     
     # Crear un DataFrame con las columnas necesarias
-    data = {'Longitud': df['Longitud'], 'Latitud': df['Latitud'], 'Concentracion': concentraciones}
+    """data = {'Longitud': df['Longitud'], 'Latitud': df['Latitud'], 'Concentracion': concentraciones}
     df_mapa = pd.DataFrame(data)
 
     # Crear el mapa de calor usando Seaborn
@@ -82,4 +82,4 @@ def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentració
     plt.title(titulo)
     plt.colorbar(label="Densidad de Concentración")
     plt.grid(True)
-    plt.show()
+    plt.show()"""

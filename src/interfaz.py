@@ -82,7 +82,7 @@ class InterfazGrafica:
                 sigma_y_disp, sigma_z_disp = calcular_sigma(x, estabilidad)
 
                 # Calcula la concentración
-                C = calcular_concentracion(Q, u, H, sigma_y_disp[0], sigma_z_disp[0], x, y_val, z)  # Usamos sigma_y[0] y sigma_z[0] porque x es un valor único
+                C = calcular_concentracion(Q, u, H, sigma_y_disp, sigma_z_disp, x, y_val, z)  # Usamos sigma_y[0] y sigma_z[0] porque x es un valor único
                 concentraciones_dispersion.append(C)
 
             # 5. Visualizar los resultados
