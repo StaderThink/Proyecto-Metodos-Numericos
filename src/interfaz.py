@@ -3,10 +3,10 @@ from tkinter import ttk
 from tkinter import messagebox
 import numpy as np
 import pandas as pd
-from src.modelo_gaussiano import calcular_concentracion, calcular_sigma
-from src.visualizacion import crear_grafico_2d, crear_grafico_3d, crear_grafico_dispersion, crear_mapa_calor  # Importa la nueva función de visualización
-from src.preprocesamiento import cargar_datos, limpiar_datos, preparar_datos_ml
-from src.entrenamiento_ml import entrenar_modelo
+from modelo_gaussiano import calcular_concentracion, calcular_sigma
+from visualizacion import crear_grafico_2d, crear_grafico_3d, crear_grafico_dispersion, crear_mapa_calor  # Importa la nueva función de visualización
+from preprocesamiento import cargar_datos, limpiar_datos, preparar_datos_ml
+from entrenamiento_ml import entrenar_modelo
 
 class InterfazGrafica:
     def __init__(self, master):
