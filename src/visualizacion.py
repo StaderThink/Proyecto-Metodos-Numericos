@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
-import pandas as pd  # Asegúrate de importar pandas aquí
+from matplotlib import cm
+import matplotlib as mpl
 
 def crear_grafico_2d(x, y, concentraciones, titulo="Concentración de Contaminantes (2D)"):
     """
@@ -68,18 +70,27 @@ def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentració
         concentraciones: Lista o array con las concentraciones calculadas para cada ubicación.
         titulo: Título del gráfico.
     """
-    
+
     # Crear un DataFrame con las columnas necesarias
     data = {'Longitud': df['Longitud'], 'Latitud': df['Latitud'], 'Concentracion': concentraciones}
     df_mapa = pd.DataFrame(data)
 
     # Crear el mapa de calor usando Seaborn
     plt.figure(figsize=(10, 8))
-    sns.kdeplot(x=df_mapa['Longitud'], y=df_mapa['Latitud'], weights=df_mapa['Concentracion'],cmap="viridis", fill=True, levels=100)
+    ax = sns.kdeplot(x=df_mapa['Longitud'], y=df_mapa['Latitud'], weights=df_mapa['Concentracion'],
+                    cmap="viridis", fill=True, levels=100)
 
-    plt.xlabel("Longitud")
-    plt.ylabel("Latitud")
-    plt.title(titulo)
-    plt.colorbar(label="Densidad de Concentración")
+    ax.set_xlabel("Longitud")  # Usa ax.set_xlabel en lugar de plt.xlabel
+    ax.set_ylabel("Latitud")    # Usa ax.set_ylabel en lugar de plt.ylabel
+    ax.set_title(titulo)      # Usa ax.set_title en lugar de plt.title
     plt.grid(True)
+
+    # Crear la barra de colores manualmente
+    norm = mpl.colors.Normalize(vmin=min(concentraciones), vmax=max(concentraciones))
+    mappable = cm.ScalarMappable(norm=norm, cmap=cm.viridis)
+
+    # Agregar la barra de colores al gráfico
+    cbar = plt.colorbar(mappable, ax=ax)
+    cbar.set_label("Densidad de Concentración")
+
     plt.show()

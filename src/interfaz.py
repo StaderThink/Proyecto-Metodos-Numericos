@@ -4,9 +4,10 @@ from tkinter import messagebox
 import numpy as np
 import pandas as pd
 from modelo_gaussiano import calcular_concentracion, calcular_sigma
-from visualizacion import crear_grafico_2d, crear_grafico_3d, crear_grafico_dispersion, crear_mapa_calor  # Importa la nueva función de visualización
+from visualizacion import crear_grafico_2d, crear_grafico_3d, crear_grafico_dispersion, crear_mapa_calor
 from preprocesamiento import cargar_datos, limpiar_datos, preparar_datos_ml
 from entrenamiento_ml import entrenar_modelo
+from datetime import datetime, timedelta  # Importa las clases datetime y timedelta
 
 class InterfazGrafica:
     def __init__(self, master):
@@ -67,29 +68,46 @@ class InterfazGrafica:
             for i, yi in enumerate(y_rango):
                 for j, xi in enumerate(x_rango):
                     concentraciones_2d[i, j] = calcular_concentracion(Q, u, H, sigma_y[j], sigma_z[j], xi, yi, z)
+            
+            # 4.Creacion de datos futuros
+            fecha_inicio = datetime(2024, 1, 2)  # Fecha de inicio de la predicción (un dia despues de los datos)
+            num_meses = 3 # Numero de meses a predecir
+            fechas_futuras = [fecha_inicio + timedelta(days=i*30) for i in range(num_meses)] #Creacion de datos de fecha
 
-            # 4. Simulación de la dispersión gaussiana (para el gráfico de dispersión y mapa de calor)
-            concentraciones_dispersion = []
-            for index, row in df.iterrows():
-                # Obtiene los datos de la fila
-                Q = row['Emisiones_Vehiculares'] + row['Emisiones_Industriales']  # Tasa de emisión (suma de fuentes)
-                u = row['Velocidad_Viento']  # Velocidad del viento
-                x = 100  # Distancia a lo largo del viento (puedes ajustarla)
-                y_val = 0  # Distancia perpendicular al viento (puedes ajustarla)
-                z = 0  # Altura al nivel del suelo
+            # Simula datos meteorologicos y de emisiones futuros
+            datos_futuros = []
+            for fecha in fechas_futuras:
+                # Simula datos meteorologicos (esto es solo un ejemplo)
+                velocidad_viento = np.random.uniform(1,6)
+                direccion_viento = np.random.uniform(0,360)
+                temperatura = np.random.uniform(5,25)
 
-                # Calcula sigma_y y sigma_z
-                sigma_y_disp, sigma_z_disp = calcular_sigma(x, estabilidad)
+                #Simula datos de emisiones (esto tambien es solo un ejemplo)
+                emisiones_vehiculares = np.random.uniform(30,100)
+                emisiones_industriales = np.random.uniform(20,50)
 
-                # Calcula la concentración
-                C = calcular_concentracion(Q, u, H, sigma_y_disp, sigma_z_disp, x, y_val, z)  # Usamos sigma_y[0] y sigma_z[0] porque x es un valor único
-                concentraciones_dispersion.append(C)
+                datos_futuros.append([emisiones_vehiculares, emisiones_industriales, velocidad_viento, direccion_viento, temperatura])
+            
+            df_futuro = pd.DataFrame(datos_futuros, columns=['Emisiones_Vehiculares', 'Emisiones_Industriales', 'Velocidad_Viento', 'Direccion_Viento', 'Temperatura'])
 
-            # 5. Visualizar los resultados
+
+            #5. Predicción con GPR
+            X_pred = df[['Emisiones_Vehiculares', 'Emisiones_Industriales', 'Velocidad_Viento', 'Direccion_Viento', 'Temperatura']]
+            y_pred, sigma = self.modelo_ml.predict(X_pred, return_std=True)
+
+            X_futuro = df_futuro[['Emisiones_Vehiculares', 'Emisiones_Industriales', 'Velocidad_Viento', 'Direccion_Viento', 'Temperatura']]
+            y_pred_futuro, sigma_futuro = self.modelo_ml.predict(X_futuro, return_std=True)
+
+
+            # 6. Visualizar los resultados
             crear_grafico_2d(x_rango, y_rango, concentraciones_2d, titulo="Concentración de Contaminantes (2D)")
             crear_grafico_3d(x_rango, y_rango, concentraciones_2d, titulo="Concentración de Contaminantes (3D)")
-            crear_grafico_dispersion(df, concentraciones_dispersion, titulo="Dispersión de Contaminantes")
-            crear_mapa_calor(df, concentraciones_dispersion, titulo="Mapa de Calor de Concentración de Contaminantes")
+            crear_grafico_dispersion(df, y_pred, titulo="Predicciones GPR con Dispersion Historico")
+            crear_mapa_calor(df, y_pred, titulo="Mapa de Calor de Predicciones GPR Historico")
+
+            crear_grafico_dispersion(df_futuro, y_pred_futuro, titulo="Predicciones GPR con Dispersion Futuro")
+            crear_mapa_calor(df_futuro, y_pred_futuro, titulo="Mapa de Calor de Predicciones GPR Futuro")
+
 
 
             messagebox.showinfo("Info", "Cálculo y visualización completados.")
