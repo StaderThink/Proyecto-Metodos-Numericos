@@ -7,14 +7,13 @@ from modelo_gaussiano import calcular_concentracion, calcular_sigma
 from visualizacion import crear_grafico_2d, crear_grafico_3d, crear_grafico_dispersion, crear_mapa_calor
 from preprocesamiento import cargar_datos, limpiar_datos, preparar_datos_ml
 from entrenamiento_ml import entrenar_modelo
-from datetime import datetime, timedelta  # Importa las clases datetime y timedelta
+from datetime import datetime, timedelta  
 
 class InterfazGrafica:
     def __init__(self, master):
         self.master = master
         master.title("Simulador de Dispersión de Contaminantes")
 
-        # Etiquetas y campos de entrada para los parámetros
         ttk.Label(master, text="Ruta del Archivo CSV:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
         self.ruta_archivo_entry = ttk.Entry(master)
         self.ruta_archivo_entry.grid(row=0, column=1, padx=5, pady=5)

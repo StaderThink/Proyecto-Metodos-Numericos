@@ -11,7 +11,7 @@ def calcular_concentracion(Q, u, H, sigma_y, sigma_z, x, y, z):
 
 def calcular_sigma(x, estabilidad):
     """Calcula los coeficientes de dispersión sigma_y y sigma_z según la estabilidad atmosférica."""
-    # Estos valores son solo ejemplos, debes ajustarlos según la literatura
+    # Estos valores se deben ajustar para que seaan mas puntuales
     if estabilidad == 'A':  # Muy inestable
         sigma_y = 0.4 * x
         sigma_z = 0.5 * x
