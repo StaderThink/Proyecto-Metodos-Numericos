@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from modelo_gaussiano import calcular_concentracion, calcular_sigma
 from visualizacion import crear_grafico_2d, crear_grafico_3d, crear_grafico_dispersion, crear_mapa_calor
-from preprocesamiento import cargar_datos, limpiar_datos, preparar_datos_ml
+from preprocesamiento import cargar_datos, preparar_datos_ml
 from entrenamiento_ml import entrenar_modelo
 from datetime import datetime, timedelta  
 
@@ -39,9 +39,7 @@ class InterfazGrafica:
             ruta_archivo = self.ruta_archivo_entry.get()
             df = cargar_datos(ruta_archivo)
             if df is None:
-                return  # Sale si no se pudieron cargar los datos
-            df = limpiar_datos(df)
-
+                return
             # 2. Preparar datos para ML y entrenar el modelo
             X, y = preparar_datos_ml(df)
             self.modelo_ml = entrenar_modelo(X, y)  # Guarda el modelo entrenado
