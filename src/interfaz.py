@@ -17,7 +17,7 @@ class InterfazGrafica:
         ttk.Label(master, text="Ruta del Archivo CSV:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
         self.ruta_archivo_entry = ttk.Entry(master)
         self.ruta_archivo_entry.grid(row=0, column=1, padx=5, pady=5)
-        self.ruta_archivo_entry.insert(0, "data/datos_simulados.csv")
+        self.ruta_archivo_entry.insert(0, "data/datos_simulados_bogota.csv")
 
         ttk.Label(master, text="Altura de la Fuente (H):").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
         self.h_entry = ttk.Entry(master)
@@ -34,7 +34,7 @@ class InterfazGrafica:
         self.cargar_button.grid(row=3, column=0, columnspan=2, pady=10)
 
     def cargar_procesar_visualizar(self):
-        try:
+        #try:
             # 1. Cargar y limpiar datos
             ruta_archivo = self.ruta_archivo_entry.get()
             df = cargar_datos(ruta_archivo)
@@ -87,6 +87,8 @@ class InterfazGrafica:
             
             df_futuro = pd.DataFrame(datos_futuros, columns=['Emisiones_Vehiculares', 'Emisiones_Industriales', 'Velocidad_Viento', 'Direccion_Viento', 'Temperatura'])
 
+            df_futuro['Latitud'] = 4.58 + np.random.normal(0, 0.005, size=len(df_futuro))
+            df_futuro['Longitud'] = 74.22 + np.random.normal(0, 0.005, size=len(df_futuro))
 
             #5. Predicción con GPR
             X_pred = df[['Emisiones_Vehiculares', 'Emisiones_Industriales', 'Velocidad_Viento', 'Direccion_Viento', 'Temperatura']]
@@ -109,10 +111,10 @@ class InterfazGrafica:
 
             messagebox.showinfo("Info", "Cálculo y visualización completados.")
 
-        except ValueError:
-            messagebox.showerror("Error", "Por favor, introduce valores numéricos válidos.")
-        except Exception as e:
-            messagebox.showerror("Error", f"Ocurrió un error: {e}")
+        #except ValueError:
+            #messagebox.showerror("Error", "Por favor, introduce valores numéricos válidos.")
+        #except Exception as e:
+            #messagebox.showerror("Error", f"Ocurrió un error: {e}")
 
 def main():
     root = tk.Tk()
