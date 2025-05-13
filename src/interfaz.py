@@ -34,7 +34,7 @@ class InterfazGrafica:
         self.cargar_button.grid(row=3, column=0, columnspan=2, pady=10)
 
     def cargar_procesar_visualizar(self):
-        #try:
+        try:
             # 1. Cargar y limpiar datos
             ruta_archivo = self.ruta_archivo_entry.get()
             df = cargar_datos(ruta_archivo)
@@ -111,10 +111,10 @@ class InterfazGrafica:
 
             messagebox.showinfo("Info", "Cálculo y visualización completados.")
 
-        #except ValueError:
-            #messagebox.showerror("Error", "Por favor, introduce valores numéricos válidos.")
-        #except Exception as e:
-            #messagebox.showerror("Error", f"Ocurrió un error: {e}")
+        except ValueError:
+            messagebox.showerror("Error", "Por favor, introduce valores numéricos válidos.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Ocurrió un error: {e}")
 
 def main():
     root = tk.Tk()
