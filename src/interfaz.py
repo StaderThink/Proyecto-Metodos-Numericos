@@ -93,7 +93,7 @@ class InterfazGrafica:
         self.master.update_idletasks()
     
     def cargar_procesar_visualizar(self):
-        #try:
+        try:
             # Mostrar barra de progreso
             self.mostrar_progreso(True)
             self.actualizar_progreso(10, "Cargando datos...")
@@ -197,6 +197,6 @@ class InterfazGrafica:
                 self.file_label.config(text=f"Archivo procesado: {self.ruta_archivo.split('/')[-1]}")
             ])
 
-        #except Exception as e:
-            #self.mostrar_progreso(False)
-            #messagebox.showerror("Error", f"Ocurrió un error: {str(e)}")
+        except Exception as e:
+            self.mostrar_progreso(False)
+            messagebox.showerror("Error", f"Ocurrió un error: {str(e)}")
