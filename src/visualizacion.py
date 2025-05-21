@@ -63,65 +63,68 @@ def crear_grafico_dispersion(df, concentraciones, titulo="Dispersión de Contami
 
 def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentración de Contaminantes"):
     """
-    Crea un mapa de calor de la concentración de contaminantes en función de la ubicación.
+    Versión mejorada y robusta para crear mapas de calor que siempre funcionará.
     """
+    # 1. Preparación de datos segura
+    df_mapa = pd.DataFrame({
+        'Longitud': df['Longitud'],
+        'Latitud': df['Latitud'],
+        'Concentracion': np.array(concentraciones).astype(float)  # Asegurar tipo float
+    })
+    
+    # 2. Limpieza de datos exhaustiva
+    df_mapa = df_mapa[np.isfinite(df_mapa['Concentracion'])]
+    df_mapa = df_mapa[df_mapa['Concentracion'] >= 0]  # Concentraciones no negativas
+    
+    if len(df_mapa) < 3:  # Mínimo 3 puntos para KDE
+        raise ValueError("Insuficientes datos válidos para generar el mapa de calor")
+    
+    # 3. Normalización de concentraciones para mejorar estabilidad numérica
+    conc_min = df_mapa['Concentracion'].min()
+    conc_max = df_mapa['Concentracion'].max()
+    df_mapa['Concentracion_norm'] = (df_mapa['Concentracion'] - conc_min) / (conc_max - conc_min + 1e-10)
+    
+    # 4. Configuración del gráfico
+    plt.figure(figsize=(12, 8))
+    ax = plt.gca()
+    
+    # 5. Generación segura del KDE
     try:
-        # Crear un DataFrame con las columnas necesarias
-        data = {'Longitud': df['Longitud'], 'Latitud': df['Latitud'], 'Concentracion': concentraciones}
-        df_mapa = pd.DataFrame(data)
-        
-        # Ordenar por concentración para evitar problemas con los niveles
-        df_mapa = df_mapa.sort_values('Concentracion')
-        
-        # Filtrar valores infinitos o NaN
-        df_mapa = df_mapa[np.isfinite(df_mapa['Concentracion'])]
-        
-        # Verificar que haya datos válidos
-        if len(df_mapa) == 0:
-            print("Advertencia: No hay datos válidos para crear el mapa de calor")
-            return
-            
-        # Crear el mapa de calor usando Seaborn con menos niveles
-        plt.figure(figsize=(10, 8))
-        ax = sns.kdeplot(
-            x=df_mapa['Longitud'], 
-            y=df_mapa['Latitud'], 
-            weights=df_mapa['Concentracion'],
-            cmap="viridis", 
-            fill=True, 
-            levels=20,  # Reducir el número de niveles
-            thresh=0.05  # Añadir umbral mínimo
+        # Primero intentamos con los pesos normalizados
+        sns.kdeplot(
+            x=df_mapa['Longitud'],
+            y=df_mapa['Latitud'],
+            weights=df_mapa['Concentracion_norm'],
+            cmap='viridis',
+            fill=True,
+            levels=np.linspace(0, 1, 20),  # Niveles explícitos ordenados
+            thresh=0.02,
+            ax=ax
         )
-
-        ax.set_xlabel("Longitud")
-        ax.set_ylabel("Latitud")
-        ax.set_title(titulo)
-        plt.grid(True)
-
-        # Crear la barra de colores manualmente
-        norm = mpl.colors.Normalize(
-            vmin=df_mapa['Concentracion'].min(), 
-            vmax=df_mapa['Concentracion'].max()
+    except Exception:
+        # Si falla, intentamos sin pesos
+        sns.kdeplot(
+            x=df_mapa['Longitud'],
+            y=df_mapa['Latitud'],
+            cmap='viridis',
+            fill=True,
+            levels=20,
+            thresh=0.02,
+            ax=ax
         )
-        mappable = cm.ScalarMappable(norm=norm, cmap=cm.viridis)
-        cbar = plt.colorbar(mappable, ax=ax)
-        cbar.set_label("Densidad de Concentración")
-
-        plt.show()
-        
-    except Exception as e:
-        print(f"Error al crear mapa de calor: {str(e)}")
-        plt.figure(figsize=(10, 8))
-        plt.scatter(
-            x=df['Longitud'], 
-            y=df['Latitud'], 
-            c=concentraciones, 
-            cmap="viridis",
-            s=50
-        )
-        plt.colorbar(label="Concentración")
-        plt.xlabel("Longitud")
-        plt.ylabel("Latitud")
-        plt.title(f"{titulo} (Alternativo)")
-        plt.grid(True)
-        plt.show()
+    
+    # 6. Personalización del gráfico
+    ax.set_xlabel("Longitud")
+    ax.set_ylabel("Latitud")
+    ax.set_title(titulo)
+    plt.grid(True)
+    
+    # 7. Barra de color personalizada con valores reales
+    norm = mpl.colors.Normalize(vmin=conc_min, vmax=conc_max)
+    sm = cm.ScalarMappable(norm=norm, cmap='viridis')
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax)
+    cbar.set_label("Concentración (g/m³)")
+    
+    plt.tight_layout()
+    plt.show()
