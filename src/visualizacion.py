@@ -64,33 +64,65 @@ def crear_grafico_dispersion(df, concentraciones, titulo="Dispersión de Contami
 def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentración de Contaminantes"):
     """
     Crea un mapa de calor de la concentración de contaminantes en función de la ubicación.
-
-    Args:
-        df: DataFrame de pandas con los datos (incluye latitud y longitud).
-        concentraciones: Lista o array con las concentraciones calculadas para cada ubicación.
-        titulo: Título del gráfico.
     """
+    try:
+        # Crear un DataFrame con las columnas necesarias
+        data = {'Longitud': df['Longitud'], 'Latitud': df['Latitud'], 'Concentracion': concentraciones}
+        df_mapa = pd.DataFrame(data)
+        
+        # Ordenar por concentración para evitar problemas con los niveles
+        df_mapa = df_mapa.sort_values('Concentracion')
+        
+        # Filtrar valores infinitos o NaN
+        df_mapa = df_mapa[np.isfinite(df_mapa['Concentracion'])]
+        
+        # Verificar que haya datos válidos
+        if len(df_mapa) == 0:
+            print("Advertencia: No hay datos válidos para crear el mapa de calor")
+            return
+            
+        # Crear el mapa de calor usando Seaborn con menos niveles
+        plt.figure(figsize=(10, 8))
+        ax = sns.kdeplot(
+            x=df_mapa['Longitud'], 
+            y=df_mapa['Latitud'], 
+            weights=df_mapa['Concentracion'],
+            cmap="viridis", 
+            fill=True, 
+            levels=20,  # Reducir el número de niveles
+            thresh=0.05  # Añadir umbral mínimo
+        )
 
-    # Crear un DataFrame con las columnas necesarias
-    data = {'Longitud': df['Longitud'], 'Latitud': df['Latitud'], 'Concentracion': concentraciones}
-    df_mapa = pd.DataFrame(data)
+        ax.set_xlabel("Longitud")
+        ax.set_ylabel("Latitud")
+        ax.set_title(titulo)
+        plt.grid(True)
 
-    # Crear el mapa de calor usando Seaborn
-    plt.figure(figsize=(10, 8))
-    ax = sns.kdeplot(x=df_mapa['Longitud'], y=df_mapa['Latitud'], weights=df_mapa['Concentracion'],
-                    cmap="viridis", fill=True, levels=100)
+        # Crear la barra de colores manualmente
+        norm = mpl.colors.Normalize(
+            vmin=df_mapa['Concentracion'].min(), 
+            vmax=df_mapa['Concentracion'].max()
+        )
+        mappable = cm.ScalarMappable(norm=norm, cmap=cm.viridis)
+        cbar = plt.colorbar(mappable, ax=ax)
+        cbar.set_label("Densidad de Concentración")
 
-    ax.set_xlabel("Longitud")  # Usa ax.set_xlabel en lugar de plt.xlabel
-    ax.set_ylabel("Latitud")    # Usa ax.set_ylabel en lugar de plt.ylabel
-    ax.set_title(titulo)      # Usa ax.set_title en lugar de plt.title
-    plt.grid(True)
-
-    # Crear la barra de colores manualmente
-    norm = mpl.colors.Normalize(vmin=min(concentraciones), vmax=max(concentraciones))
-    mappable = cm.ScalarMappable(norm=norm, cmap=cm.viridis)
-
-    # Agregar la barra de colores al gráfico
-    cbar = plt.colorbar(mappable, ax=ax)
-    cbar.set_label("Densidad de Concentración")
-
-    plt.show()
+        plt.show()
+        
+    except Exception as e:
+        print(f"Error al crear mapa de calor: {str(e)}")
+        # Mostrar un scatter plot como alternativa
+        plt.figure(figsize=(10, 8))
+        plt.scatter(
+            x=df['Longitud'], 
+            y=df['Latitud'], 
+            c=concentraciones, 
+            cmap="viridis",
+            s=50
+        )
+        plt.colorbar(label="Concentración")
+        plt.xlabel("Longitud")
+        plt.ylabel("Latitud")
+        plt.title(f"{titulo} (Scatter Plot Alternativo)")
+        plt.grid(True)
+        plt.show()

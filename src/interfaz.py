@@ -1,125 +1,202 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, filedialog, messagebox
 import numpy as np
 import pandas as pd
 from modelo_gaussiano import calcular_concentracion, calcular_sigma
 from visualizacion import crear_grafico_2d, crear_grafico_3d, crear_grafico_dispersion, crear_mapa_calor
 from preprocesamiento import cargar_datos, preparar_datos_ml
 from entrenamiento_ml import entrenar_modelo
-from datetime import datetime, timedelta  
+from datetime import datetime, timedelta
 
 class InterfazGrafica:
     def __init__(self, master):
         self.master = master
         master.title("Simulador de Dispersión de Contaminantes")
-
-        ttk.Label(master, text="Ruta del Archivo CSV:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.ruta_archivo_entry = ttk.Entry(master)
-        self.ruta_archivo_entry.grid(row=0, column=1, padx=5, pady=5)
-        self.ruta_archivo_entry.insert(0, "data/datos_simulados_bogota.csv")
-
-        ttk.Label(master, text="Altura de la Fuente (H):").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        self.h_entry = ttk.Entry(master)
-        self.h_entry.grid(row=1, column=1, padx=5, pady=5)
-        self.h_entry.insert(0, "50")  # Altura de la fuente por defecto
-
-        ttk.Label(master, text="Estabilidad Atmosférica:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
-        self.estabilidad_combo = ttk.Combobox(master, values=['A', 'B', 'C', 'D', 'E', 'F'])
-        self.estabilidad_combo.grid(row=2, column=1, padx=5, pady=5)
-        self.estabilidad_combo.set('D')  # Estabilidad neutra por defecto
-
-        # Botón para cargar, procesar y visualizar
-        self.cargar_button = ttk.Button(master, text="Cargar, Procesar y Visualizar", command=self.cargar_procesar_visualizar)
-        self.cargar_button.grid(row=3, column=0, columnspan=2, pady=10)
-
+        
+        # Configurar estilo para botones
+        style = ttk.Style()
+        style.configure('TButton', font=('Helvetica', 10), padding=5)
+        style.configure('Success.TButton', foreground='green', font=('Helvetica', 10, 'bold'))
+        
+        # Frame para la carga de archivos
+        file_frame = ttk.LabelFrame(master, text="Cargar Datos", padding=(10, 5))
+        file_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        
+        # Botón para seleccionar archivo
+        self.select_button = ttk.Button(
+            file_frame, 
+            text="Seleccionar Archivo CSV", 
+            command=self.seleccionar_archivo
+        )
+        self.select_button.grid(row=0, column=0, padx=5, pady=5)
+        
+        # Etiqueta para mostrar el nombre del archivo seleccionado
+        self.file_label = ttk.Label(file_frame, text="Ningún archivo seleccionado")
+        self.file_label.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        
+        # Barra de progreso
+        self.progress = ttk.Progressbar(
+            file_frame, 
+            orient="horizontal", 
+            length=200, 
+            mode="determinate"
+        )
+        self.progress.grid(row=1, column=0, columnspan=2, pady=5, sticky="ew")
+        self.progress.grid_remove()  # Ocultar inicialmente
+        
+        # Botón para procesar y visualizar
+        self.cargar_button = ttk.Button(
+            master, 
+            text="Procesar y Visualizar", 
+            command=self.cargar_procesar_visualizar,
+            state="disabled"  # Deshabilitado hasta que se seleccione un archivo
+        )
+        self.cargar_button.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        
+        # Configurar peso de columnas para que se expandan
+        master.columnconfigure(0, weight=1)
+        file_frame.columnconfigure(1, weight=1)
+        
+        # Variable para almacenar la ruta del archivo
+        self.ruta_archivo = ""
+    
+    def seleccionar_archivo(self):
+        """Abre un diálogo para seleccionar archivo y actualiza la interfaz"""
+        filetypes = [("CSV files", "*.csv"), ("All files", "*.*")]
+        filename = filedialog.askopenfilename(
+            title="Seleccionar archivo CSV", 
+            filetypes=filetypes
+        )
+        
+        if filename:
+            self.ruta_archivo = filename
+            self.file_label.config(text=filename.split("/")[-1])
+            self.cargar_button.config(state="enabled")
+            
+            # Cambiar estilo del botón para indicar éxito
+            self.select_button.config(style='Success.TButton', text="✓ Archivo Seleccionado")
+    
+    def mostrar_progreso(self, visible=True):
+        """Muestra u oculta la barra de progreso"""
+        if visible:
+            self.progress.grid()
+            self.progress["value"] = 0
+            self.master.update_idletasks()
+        else:
+            self.progress.grid_remove()
+    
+    def actualizar_progreso(self, valor, mensaje=None):
+        """Actualiza la barra de progreso y opcionalmente muestra un mensaje"""
+        self.progress["value"] = valor
+        if mensaje:
+            self.file_label.config(text=mensaje)
+        self.master.update_idletasks()
+    
     def cargar_procesar_visualizar(self):
-        try:
+        #try:
+            # Mostrar barra de progreso
+            self.mostrar_progreso(True)
+            self.actualizar_progreso(10, "Cargando datos...")
+            
             # 1. Cargar y limpiar datos
-            ruta_archivo = self.ruta_archivo_entry.get()
-            df = cargar_datos(ruta_archivo)
+            df = cargar_datos(self.ruta_archivo)
             if df is None:
+                self.mostrar_progreso(False)
                 return
+            
+            self.actualizar_progreso(30, "Preparando datos para ML...")
+            
             # 2. Preparar datos para ML y entrenar el modelo
             X, y = preparar_datos_ml(df)
-            self.modelo_ml = entrenar_modelo(X, y)  # Guarda el modelo entrenado
+            self.actualizar_progreso(50, "Entrenando modelo...")
+            self.modelo_ml = entrenar_modelo(X, y)
+            
+            self.actualizar_progreso(60, "Realizando simulación gaussiana...")
+            
+            # 3. Simulación gaussiana usando datos promedio
+            x_rango = np.linspace(100, 1000, 50)
+            y_rango = np.linspace(-200, 200, 50)
+            z = 0
 
-            # 3. Simulación de la dispersión gaussiana (para el gráfico 2D y 3D)
-            H = float(self.h_entry.get())
-            estabilidad = self.estabilidad_combo.get()
+            Q = df['PM2.5'].mean() + df['PM10'].mean()
+            u = df['Velocidad_Viento'].mean()
+            H = df['Altura_Fuente'].mean()
+            estabilidad = df['Estabilidad'].mode()[0]
 
-            # Define un rango espacial (para el gráfico 2D y 3D)
-            x_rango = np.linspace(100, 1000, 50)  # Distancia a lo largo del viento
-            y_rango = np.linspace(-200, 200, 50)  # Distancia perpendicular al viento
-            z = 0  # Altura al nivel del suelo
-
-            # Usa datos promedio para la simulación (esto es solo un ejemplo)
-            Q = df['Emisiones_Vehiculares'].mean() + df['Emisiones_Industriales'].mean()  # Tasa de emisión (suma de fuentes)
-            u = df['Velocidad_Viento'].mean()  # Velocidad del viento
-
-            # Calcula sigma_y y sigma_z
             sigma_y, sigma_z = calcular_sigma(x_rango, estabilidad)
 
-            # Calcula la concentración para cada punto (para el gráfico 2D y 3D)
             concentraciones_2d = np.zeros((len(y_rango), len(x_rango)))
             for i, yi in enumerate(y_rango):
                 for j, xi in enumerate(x_rango):
                     concentraciones_2d[i, j] = calcular_concentracion(Q, u, H, sigma_y[j], sigma_z[j], xi, yi, z)
             
-            # 4.Creacion de datos futuros
-            fecha_inicio = datetime(2024, 1, 2)  # Fecha de inicio de la predicción (un dia despues de los datos)
-            num_meses = 3 # Numero de meses a predecir
-            fechas_futuras = [fecha_inicio + timedelta(days=i*30) for i in range(num_meses)] #Creacion de datos de fecha
+            self.actualizar_progreso(70, "Simulando datos futuros...")
+            
+            # 4. Simulación de datos futuros
+            fecha_inicio = datetime(2024, 1, 2)
+            num_meses = 3
+            fechas_futuras = [fecha_inicio + timedelta(days=i*30) for i in range(num_meses)]
 
-            # Simula datos meteorologicos y de emisiones futuros
             datos_futuros = []
             for fecha in fechas_futuras:
-                # Simula datos meteorologicos (esto es solo un ejemplo)
-                velocidad_viento = np.random.uniform(1,6)
-                direccion_viento = np.random.uniform(0,360)
-                temperatura = np.random.uniform(5,25)
+                velocidad_viento = np.random.uniform(1, 6)
+                direccion_viento = np.random.uniform(0, 360)
+                temperatura = np.random.uniform(5, 25)
+                pm25 = np.random.uniform(10, 80)
+                pm10 = np.random.uniform(20, 120)
+                co2 = np.random.uniform(350, 500)
+                estabilidad = np.random.choice(['A', 'B', 'C', 'D', 'E', 'F'])
+                altura_fuente = np.random.uniform(10, 80)
+                latitud = 4.65 + np.random.uniform(-0.01, 0.01)
+                longitud = -74.05 + np.random.uniform(-0.01, 0.01)
 
-                #Simula datos de emisiones (esto tambien es solo un ejemplo)
-                emisiones_vehiculares = np.random.uniform(30,100)
-                emisiones_industriales = np.random.uniform(20,50)
+                datos_futuros.append([
+                    fecha.strftime("%Y-%m-%d"),
+                    fecha.strftime("%H:%M"),
+                    latitud,
+                    longitud,
+                    pm25,
+                    pm10,
+                    co2,
+                    velocidad_viento,
+                    direccion_viento,
+                    temperatura,
+                    estabilidad,
+                    altura_fuente
+                ])
 
-                datos_futuros.append([emisiones_vehiculares, emisiones_industriales, velocidad_viento, direccion_viento, temperatura])
+            df_futuro = pd.DataFrame(datos_futuros, columns=[
+                'Fecha', 'Hora', 'Latitud', 'Longitud', 'PM2.5', 'PM10', 'CO2',
+                'Velocidad_Viento', 'Direccion_Viento', 'Temperatura',
+                'Estabilidad', 'Altura_Fuente'
+            ])
             
-            df_futuro = pd.DataFrame(datos_futuros, columns=['Emisiones_Vehiculares', 'Emisiones_Industriales', 'Velocidad_Viento', 'Direccion_Viento', 'Temperatura'])
-
-            df_futuro['Latitud'] = 4.58 + np.random.normal(0, 0.005, size=len(df_futuro))
-            df_futuro['Longitud'] = 74.22 + np.random.normal(0, 0.005, size=len(df_futuro))
-
-            #5. Predicción con GPR
-            X_pred = df[['Emisiones_Vehiculares', 'Emisiones_Industriales', 'Velocidad_Viento', 'Direccion_Viento', 'Temperatura']]
-            y_pred, sigma = self.modelo_ml.predict(X_pred, return_std=True)
-
-            X_futuro = df_futuro[['Emisiones_Vehiculares', 'Emisiones_Industriales', 'Velocidad_Viento', 'Direccion_Viento', 'Temperatura']]
+            self.actualizar_progreso(80, "Realizando predicciones...")
+            
+            # 5. Predicciones utilizando las mismas columnas que en entrenamiento
+            y_pred, sigma = self.modelo_ml.predict(X, return_std=True)
+            X_futuro = df_futuro[X.columns]  # Asegurar mismo orden y nombres de columnas
             y_pred_futuro, sigma_futuro = self.modelo_ml.predict(X_futuro, return_std=True)
-
-
-            # 6. Visualizar los resultados
+            
+            self.actualizar_progreso(90, "Generando visualizaciones...")
+            
+            # 6. Visualización
             crear_grafico_2d(x_rango, y_rango, concentraciones_2d, titulo="Concentración de Contaminantes (2D)")
             crear_grafico_3d(x_rango, y_rango, concentraciones_2d, titulo="Concentración de Contaminantes (3D)")
-            crear_grafico_dispersion(df, y_pred, titulo="Predicciones GPR con Dispersion Historico")
-            crear_mapa_calor(df, y_pred, titulo="Mapa de Calor de Predicciones GPR Historico")
-
+            crear_grafico_dispersion(df, y_pred, titulo="Predicciones GPR con Dispersion Histórico")
+            crear_mapa_calor(df, y_pred, titulo="Mapa de Calor de Predicciones GPR Histórico")
             crear_grafico_dispersion(df_futuro, y_pred_futuro, titulo="Predicciones GPR con Dispersion Futuro")
             crear_mapa_calor(df_futuro, y_pred_futuro, titulo="Mapa de Calor de Predicciones GPR Futuro")
+            
+            self.actualizar_progreso(100, "¡Proceso completado!")
+            
+            # Mostrar mensaje de éxito y ocultar progreso después de un breve retraso
+            self.master.after(1500, lambda: [
+                messagebox.showinfo("Éxito", "Procesamiento y visualización completados con éxito."),
+                self.mostrar_progreso(False),
+                self.file_label.config(text=f"Archivo procesado: {self.ruta_archivo.split('/')[-1]}")
+            ])
 
-
-
-            messagebox.showinfo("Info", "Cálculo y visualización completados.")
-
-        except ValueError:
-            messagebox.showerror("Error", "Por favor, introduce valores numéricos válidos.")
-        except Exception as e:
-            messagebox.showerror("Error", f"Ocurrió un error: {e}")
-
-def main():
-    root = tk.Tk()
-    interfaz = InterfazGrafica(root)
-    root.mainloop()
-
-if __name__ == "__main__":
-    main()
+        #except Exception as e:
+            #self.mostrar_progreso(False)
+            #messagebox.showerror("Error", f"Ocurrió un error: {str(e)}")
