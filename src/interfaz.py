@@ -133,7 +133,7 @@ class InterfazGrafica:
             self.actualizar_progreso(70, "Simulando datos futuros...")
             
             # 4. Simulación de datos futuros
-            fecha_inicio = datetime(2024, 1, 2)
+            fecha_inicio = datetime(2025, 5, 2)
             num_meses = 3
             fechas_futuras = [fecha_inicio + timedelta(days=i*30) for i in range(num_meses)]
 

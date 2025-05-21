@@ -111,7 +111,6 @@ def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentració
         
     except Exception as e:
         print(f"Error al crear mapa de calor: {str(e)}")
-        # Mostrar un scatter plot como alternativa
         plt.figure(figsize=(10, 8))
         plt.scatter(
             x=df['Longitud'], 
@@ -123,6 +122,6 @@ def crear_mapa_calor(df, concentraciones, titulo="Mapa de Calor de Concentració
         plt.colorbar(label="Concentración")
         plt.xlabel("Longitud")
         plt.ylabel("Latitud")
-        plt.title(f"{titulo} (Scatter Plot Alternativo)")
+        plt.title(f"{titulo} (Alternativo)")
         plt.grid(True)
         plt.show()
